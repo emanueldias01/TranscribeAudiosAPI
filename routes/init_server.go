@@ -23,20 +23,19 @@ func InitServer(){
 
 
 	http.HandleFunc("/transcrible", func(w http.ResponseWriter, r *http.Request) {
-		response, err := service.TranscribeAudio(r)
+		if r.Method != http.MethodPost {
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+            return
+        }
 
-		if err != nil{
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
+        text, err := service.TranscribeAudio(r)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
 
-		body := struct{
-			Response string `json:"response"`
-		}{
-			Response: response,
-		}
+        w.Write([]byte(text))
 
-		json.NewEncoder(w).Encode(body)
 	})
 	http.ListenAndServe(":8080", nil)
 }
